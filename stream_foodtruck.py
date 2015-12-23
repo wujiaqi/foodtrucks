@@ -56,16 +56,15 @@ class StreamHandler(tweepy.StreamListener):
 			br3_portion = re.search(r"@?BR#?3\s+(.*)", statusobj['text']).group(1)
 			br3_mentions = re.findall(r"\@([a-zA-Z0-9_]+)", br3_portion)
 			push_message = ""
-		    for mention in br3_mentions:
-		        tw_user = api.get_user(mention)
-		        push_message += tw_user.name + "\n"
-		        if tw_user.url:
-		            push_message += tw_user.url + "\n"
-		        else:
-		            push_message += "https://twitter.com/" + mention + "\n"
-
-			_logger.debug("text matched, pushing to Pushbullet Channel")
-			pushbullet_message(push_message, PB_BR3_TAG)
+	    for mention in br3_mentions:
+			tw_user = api.get_user(mention)
+			push_message += tw_user.name + "\n"
+			if tw_user.url:
+				push_message += tw_user.url + "\n"
+		    else:
+				push_message += "https://twitter.com/" + mention + "\n"
+		_logger.debug("text matched, pushing to Pushbullet Channel")
+		pushbullet_message(push_message, PB_BR3_TAG)
 
 	def on_error(self, status_code):
 		_logger.error("Error status: " + str(status_code))
