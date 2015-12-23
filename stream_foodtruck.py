@@ -43,14 +43,29 @@ logging_handler = logging.handlers.RotatingFileHandler(LOG_FILENAME)
 
 _logger.addHandler(logging_handler)
 
+auth = tweepy.OAuthHandler(TW_CONSUMER_KEY, TW_CONSUMER_SECRET)
+auth.set_access_token(TW_ACCESS_TOKEN, TW_ACCESS_TOKENSECRET)
+api = tweepy.API(auth)
+
 class StreamHandler(tweepy.StreamListener):
 
 	def on_data(self, data):
 		statusobj = json.loads(unicode(data))
 		_logger.debug("tweet received: " + statusobj['text'])
 		if re.search(BR3_REGEX, statusobj['text']) != None:
+			br3_portion = re.search(r"@?BR#?3\s+(.*)", statusobj['text']).group(1)
+			br3_mentions = re.findall(r"\@([a-zA-Z0-9_]+)", br3_portion)
+			push_message = ""
+			for mention in br3_mentions:
+		        tw_user = api.get_user(mention)
+		        push_message += tw_user.name + "\n"
+		        if tw_user.url:
+		            push_message += tw_user.url + "\n"
+		        else:
+		            push_message += "https://twitter.com/" + mention + "\n"
+
 			_logger.debug("text matched, pushing to Pushbullet Channel")
-			pushbullet_message(statusobj['text'], PB_BR3_TAG)
+			pushbullet_message(push_message, PB_BR3_TAG)
 
 	def on_error(self, status_code):
 		_logger.error("Error status: " + str(status_code))
@@ -78,9 +93,6 @@ def pushbullet_message(message, channel_tag):
 		sys.exit("Something else went wrong when pushing")
 	conn.close()
 
-
-auth = tweepy.OAuthHandler(TW_CONSUMER_KEY, TW_CONSUMER_SECRET)
-auth.set_access_token(TW_ACCESS_TOKEN, TW_ACCESS_TOKENSECRET)
 
 while(True):
 
