@@ -56,7 +56,7 @@ class StreamHandler(tweepy.StreamListener):
 			br3_portion = re.search(r"@?BR#?3\s+(.*)", statusobj['text']).group(1)
 			br3_mentions = re.findall(r"\@([a-zA-Z0-9_]+)", br3_portion)
 			push_message = ""
-			for mention in br3_mentions:
+		    for mention in br3_mentions:
 		        tw_user = api.get_user(mention)
 		        push_message += tw_user.name + "\n"
 		        if tw_user.url:
