@@ -40,7 +40,7 @@ _logger = logging.getLogger()
 logFormatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
 
 logging_handler = logging.handlers.RotatingFileHandler(LOG_FILENAME)
-_logger.setFormatter(logFormatter)
+logging_handler.setFormatter(logFormatter)
 _logger.addHandler(logging_handler)
 
 consoleHandler = logging.StreamHandler(sys.stdout)
