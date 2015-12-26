@@ -37,6 +37,7 @@ LOG_FILENAME =config.get('misc', 'LOG_FILENAME')
 #logging.basicConfig(datefmt='%m-%d %H:%M')
 
 _logger = logging.getLogger()
+_logger.setLevel(logging.INFO)
 logFormatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
 
 logging_handler = logging.handlers.RotatingFileHandler(LOG_FILENAME)
