@@ -36,12 +36,16 @@ LOG_FILENAME =config.get('misc', 'LOG_FILENAME')
 
 #logging.basicConfig(datefmt='%m-%d %H:%M')
 
-_logger = logging.getLogger('FoodtruckStreamLogger')
-_logger.setLevel(logging.DEBUG)
+_logger = logging.getLogger()
+logFormatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
 
 logging_handler = logging.handlers.RotatingFileHandler(LOG_FILENAME)
-
+_logger.setFormatter(logFormatter)
 _logger.addHandler(logging_handler)
+
+consoleHandler = logging.StreamHandler(sys.stdout)
+consoleHandler.setFormatter(logFormatter)
+_logger.addHandler(consoleHandler)
 
 auth = tweepy.OAuthHandler(TW_CONSUMER_KEY, TW_CONSUMER_SECRET)
 auth.set_access_token(TW_ACCESS_TOKEN, TW_ACCESS_TOKENSECRET)
