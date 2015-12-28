@@ -4,6 +4,7 @@ LABEL description="Dockerized foodtruck app"
 RUN apt-get update
 RUN apt-get install -y python python-pip && \
     pip install tweepy
+    pip install pymongo
 RUN apt-get install -y mongodb-server && \
     mkdir -p /data/db
 RUN apt-get clean && \

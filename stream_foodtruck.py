@@ -8,6 +8,10 @@ import logging
 import logging.handlers
 import re
 import ConfigParser
+import datetime
+import pymongo
+
+from pymongo import MongoClient
 
 config = ConfigParser.RawConfigParser()
 config.read('foodtrucks.cfg')
@@ -34,11 +38,16 @@ BR3_REGEX=config.get('misc', 'BR3_REGEX')
 
 LOG_FILENAME =config.get('misc', 'LOG_FILENAME')
 
+DB_HOST = "localhost"
+DB_HOST = config.get('mongodb', 'HOST')
+DB_PORT = 27107
+DB_PORT = config.getint('mongodb', 'PORT')
+
 #logging.basicConfig(datefmt='%m-%d %H:%M')
 
 _logger = logging.getLogger()
 _logger.setLevel(logging.INFO)
-logFormatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
+logFormatter = logging.Formatter("%(asctime)s [%(threadName)s] [%(levelname)s]  %(message)s")
 
 logging_handler = logging.handlers.RotatingFileHandler(LOG_FILENAME)
 logging_handler.setFormatter(logFormatter)
@@ -48,11 +57,12 @@ consoleHandler = logging.StreamHandler(sys.stdout)
 consoleHandler.setFormatter(logFormatter)
 _logger.addHandler(consoleHandler)
 
-auth = tweepy.OAuthHandler(TW_CONSUMER_KEY, TW_CONSUMER_SECRET)
-auth.set_access_token(TW_ACCESS_TOKEN, TW_ACCESS_TOKENSECRET)
-api = tweepy.API(auth)
-
 class StreamHandler(tweepy.StreamListener):
+
+    def __init__(self, tw_api, history_collection):
+        self.api = tw_api
+        self.history_coll = history_collection
+
 
     def on_data(self, data):
         statusobj = json.loads(unicode(data))
@@ -60,16 +70,29 @@ class StreamHandler(tweepy.StreamListener):
         if re.search(BR3_REGEX, statusobj['text']) != None:
             br3_portion = re.search(r"@?BR#?3\s+(.*)", statusobj['text']).group(1)
             br3_mentions = re.findall(r"\@([a-zA-Z0-9_]+)", br3_portion)
+            todays_date = datetime.datetime.now().replace(hour=0, minute=0, second=0)
+            cursor = self.history_coll.find({"timestamp": {"$gt": todays_date}}).sort("timestamp", pymongo.DESCENDING).limit(1)
+            if cursor.count() > 0:
+                doc = cursor.next()
+                #exit out if no update on foodtrucks today
+                if set(doc['trucks']) == set(br3_mentions):
+                    return
             push_message = ""
             for mention in br3_mentions:
-                tw_user = api.get_user(mention)
+                tw_user = self.api.get_user(mention)
                 push_message += tw_user.name + "\n"
                 if tw_user.url:
                     push_message += tw_user.url + "\n"
                 else:
                     push_message += "https://twitter.com/" + mention + "\n"
-            _logger.debug("text matched, pushing to Pushbullet Channel")
-            pushbullet_message(push_message, PB_BR3_TAG)
+            _logger.info("text matched, pushing to Pushbullet Channel:\n" + push_message)
+            push_status = pushbullet_message(push_message, PB_BR3_TAG)
+            if push_status == True:
+                post = {
+                    "timestamp": datetime.datetime.now(),
+                    "trucks": br3_mentions
+                }
+                self.history_coll.insert(post)
 
     def on_error(self, status_code):
         _logger.error("Error status: " + str(status_code))
@@ -91,18 +114,35 @@ def pushbullet_message(message, channel_tag):
     params = urllib.urlencode(params)
     conn.request("POST", "/v2/pushes", params, headers)
     response = conn.getresponse()
+    success = False
     if(response.status == httplib.UNAUTHORIZED):
-        sys.exit("Unauthorized")
+        _logger.error("Unauthorized Pushbullet request")
     elif(response.status != httplib.OK):
-        sys.exit("Something else went wrong when pushing")
+        _logger.error("Error occured while pushing to Pushbullet")
+    else:
+        _logger.info("Pushed successfully")
+        success = True
     conn.close()
+    return success
+
+
+def initDBIndexing(history_coll):
+    indexes = list(history_coll.index_information())
+    if "timestamp_1" not in indexes:
+        history_coll.create_index([('timestamp', pymongo.ASCENDING)])
 
 
 while(True):
 
     try:
         _logger.info("streaming...")
-        stream = tweepy.Stream(auth, StreamHandler())
+        auth = tweepy.OAuthHandler(TW_CONSUMER_KEY, TW_CONSUMER_SECRET)
+        auth.set_access_token(TW_ACCESS_TOKEN, TW_ACCESS_TOKENSECRET)
+        api = tweepy.API(auth)
+        dbclient = MongoClient(DB_HOST, DB_PORT)
+        history_coll = dbclient['foodtruckdb']['history']
+        initDBIndexing(history_coll)
+        stream = tweepy.Stream(auth, StreamHandler(api, history_coll))
         stream.filter(follow=[FOODTRUCK_MAFIA_ID, JERSEY_GIRL_ID])
         #stream.filter(track=[sys.argv[1]])
     except KeyboardInterrupt:
