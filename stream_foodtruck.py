@@ -127,8 +127,9 @@ def pushbullet_message(message, channel_tag):
 
 
 def initDBIndexing(history_coll):
-    _logger.info("checking for index")
+    _logger.info("creating index")
     history_coll.create_index([('timestamp', pymongo.ASCENDING)])
+    _logger.info("index created")
 
 
 while(True):
