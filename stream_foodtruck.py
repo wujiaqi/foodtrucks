@@ -132,15 +132,16 @@ def initDBIndexing(history_coll):
     _logger.info("index created")
 
 
+dbclient = MongoClient(DB_HOST, DB_PORT)
+history_coll = dbclient['foodtruckdb']['history']
+auth = tweepy.OAuthHandler(TW_CONSUMER_KEY, TW_CONSUMER_SECRET)
+auth.set_access_token(TW_ACCESS_TOKEN, TW_ACCESS_TOKENSECRET)
+api = tweepy.API(auth)
+initDBIndexing(history_coll)
+
 while(True):
     try:
         _logger.info("streaming...")
-        auth = tweepy.OAuthHandler(TW_CONSUMER_KEY, TW_CONSUMER_SECRET)
-        auth.set_access_token(TW_ACCESS_TOKEN, TW_ACCESS_TOKENSECRET)
-        api = tweepy.API(auth)
-        dbclient = MongoClient(DB_HOST, DB_PORT)
-        history_coll = dbclient['foodtruckdb']['history']
-        initDBIndexing(history_coll)
         stream = tweepy.Stream(auth, StreamHandler(api, history_coll))
         stream.filter(follow=[FOODTRUCK_MAFIA_ID, JERSEY_GIRL_ID])
         #stream.filter(track=[sys.argv[1]])
