@@ -136,7 +136,7 @@ dbclient = None
 for i in range(20):
     try:
         client = MongoClient(DB_HOST, DB_PORT, connectTimeoutMS=3000)
-        dbclient.server_info()
+        client.server_info()
         dbclient = client
         break
     except pymongo.errors.ServerSelectionTimeoutError:
