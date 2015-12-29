@@ -127,13 +127,11 @@ def pushbullet_message(message, channel_tag):
 
 
 def initDBIndexing(history_coll):
-    indexes = list(history_coll.index_information())
-    if "timestamp_1" not in indexes:
-        history_coll.create_index([('timestamp', pymongo.ASCENDING)])
+    _logger.info("checking for index")
+    history_coll.create_index([('timestamp', pymongo.ASCENDING)])
 
 
 while(True):
-
     try:
         _logger.info("streaming...")
         auth = tweepy.OAuthHandler(TW_CONSUMER_KEY, TW_CONSUMER_SECRET)
