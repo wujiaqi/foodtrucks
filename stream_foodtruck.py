@@ -135,12 +135,12 @@ def initDBIndexing(history_coll):
 dbclient = None
 for i in range(20):
     try:
-        client = MongoClient(DB_HOST, DB_PORT, connectTimeoutMS=3000)
+        client = MongoClient(DB_HOST, DB_PORT, serverSelectionTimeoutMS=10000)
         client.server_info()
         dbclient = client
         break
     except pymongo.errors.ServerSelectionTimeoutError:
-        _logger.warning("MongoDB not yet ready...retrying in 3 seconds")
+        _logger.warning("MongoDB not yet ready...retrying in 5 seconds")
 if dbclient == None:
     _logger.error("MongoDB failed to start. Exiting")
     sys.exit()
