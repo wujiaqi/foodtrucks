@@ -132,7 +132,19 @@ def initDBIndexing(history_coll):
     _logger.info("index created")
 
 
-dbclient = MongoClient(DB_HOST, DB_PORT)
+dbclient = None
+for i in range(20):
+    try:
+        client = MongoClient(DB_HOST, DB_PORT, connectTimeoutMS=3000)
+        dbclient.server_info()
+        dbclient = client
+        break
+    except pymongo.errors.ServerSelectionTimeoutError:
+        _logger.warning("MongoDB not yet ready...retrying in 3 seconds")
+if dbclient == None:
+    _logger.error("MongoDB failed to start. Exiting")
+    sys.exit()
+
 history_coll = dbclient['foodtruckdb']['history']
 auth = tweepy.OAuthHandler(TW_CONSUMER_KEY, TW_CONSUMER_SECRET)
 auth.set_access_token(TW_ACCESS_TOKEN, TW_ACCESS_TOKENSECRET)
