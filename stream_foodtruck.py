@@ -10,6 +10,7 @@ import re
 import ConfigParser
 import datetime
 import pymongo
+import os
 
 from pymongo import MongoClient
 
@@ -17,13 +18,13 @@ config = ConfigParser.RawConfigParser()
 config.read('foodtrucks.cfg')
 
 #Twitter OAuth credentials
-TW_CONSUMER_KEY =config.get('twitter', 'TW_CONSUMER_KEY')
-TW_CONSUMER_SECRET =config.get('twitter', 'TW_CONSUMER_SECRET')
-TW_ACCESS_TOKEN =config.get('twitter', 'TW_ACCESS_TOKEN')
-TW_ACCESS_TOKENSECRET =config.get('twitter', 'TW_ACCESS_TOKENSECRET')
+TW_CONSUMER_KEY =os.environ['TW_CONSUMER_KEY']
+TW_CONSUMER_SECRET =os.environ['TW_CONSUMER_SECRET']
+TW_ACCESS_TOKEN =os.environ['TW_ACCESS_TOKEN']
+TW_ACCESS_TOKENSECRET =os.environ['TW_ACCESS_TOKENSECRET']
 
 #access token for pusbbullet 
-PUSHBULLET_TOKEN =config.get('pushbullet', 'PUSHBULLET_TOKEN')
+PUSHBULLET_TOKEN =os.environ['PUSHBULLET_TOKEN']
 
 TWITTER_URL=config.get('twitter', 'TWITTER_URL')
 PUSHBULLET_URL=config.get('pushbullet', 'PUSHBULLET_URL')
