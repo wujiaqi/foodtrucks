@@ -78,6 +78,8 @@ class StreamHandler(tweepy.StreamListener):
                 if set(doc['trucks']) == set(br3_mentions):
                     return
             push_message = ""
+            if len(br3_mentions) == 0:
+            	return
             for mention in br3_mentions:
                 tw_user = self.api.get_user(mention)
                 push_message += tw_user.name + "\n"
@@ -140,7 +142,7 @@ for i in range(20):
         dbclient = client
         break
     except pymongo.errors.ServerSelectionTimeoutError:
-        _logger.warning("MongoDB not yet ready...retrying in 5 seconds")
+        _logger.warning("MongoDB not yet ready...retrying in 10 seconds")
 if dbclient == None:
     _logger.error("MongoDB failed to start. Exiting")
     sys.exit()
