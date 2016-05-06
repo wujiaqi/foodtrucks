@@ -11,6 +11,7 @@ import ConfigParser
 import datetime
 import pymongo
 import os
+import pbclient
 
 from pymongo import MongoClient
 
@@ -89,13 +90,15 @@ class StreamHandler(tweepy.StreamListener):
                 else:
                     push_message += "https://twitter.com/" + mention + "\n"
             _logger.info("text matched, pushing to Pushbullet Channel:\n" + push_message)
-            push_status = pushbullet_message(push_message, PB_BR3_TAG)
-            if push_status == True:
-                post = {
+            try:
+            	pbclient.push_note_to_channel(PB_BR3_TAG, "Food Trucks at BR3 Today", push_message, PUSHBULLET_TOKEN)
+            	post = {
                     "timestamp": datetime.datetime.now(),
                     "trucks": br3_mentions
                 }
                 self.history_coll.insert(post)
+            except Exception as e:
+            	_logger.error(e)                
 
     def on_error(self, status_code):
         _logger.error("Error status: " + str(status_code))
@@ -107,26 +110,6 @@ class StreamHandler(tweepy.StreamListener):
             _logger.error("sleeping for 2 minutes before reconnect")
             time.sleep(120)
             return True
-        
-
-def pushbullet_message(message, channel_tag):
-    conn = httplib.HTTPSConnection(PUSHBULLET_URL)
-    headers = {"Content-Type": "application/x-www-form-urlencoded",
-     "Authorization": "Bearer " + PUSHBULLET_TOKEN}
-    params = {"channel_tag": channel_tag, "type": "note", "title": "Food Trucks at BR3 Today", "body": message}
-    params = urllib.urlencode(params)
-    conn.request("POST", "/v2/pushes", params, headers)
-    response = conn.getresponse()
-    success = False
-    if(response.status == httplib.UNAUTHORIZED):
-        _logger.error("Unauthorized Pushbullet request")
-    elif(response.status != httplib.OK):
-        _logger.error("Error occured while pushing to Pushbullet")
-    else:
-        _logger.info("Pushed successfully")
-        success = True
-    conn.close()
-    return success
 
 
 def initDBIndexing(history_coll):
@@ -154,7 +137,9 @@ auth.set_access_token(TW_ACCESS_TOKEN, TW_ACCESS_TOKENSECRET)
 api = tweepy.API(auth)
 initDBIndexing(history_coll)
 
-while(True):
+fatal_error = false
+
+while(!fatal_error):
     try:
         _logger.info("streaming...")
         stream = tweepy.Stream(auth, StreamHandler(api, history_coll))
