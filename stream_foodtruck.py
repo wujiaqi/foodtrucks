@@ -137,9 +137,9 @@ auth.set_access_token(TW_ACCESS_TOKEN, TW_ACCESS_TOKENSECRET)
 api = tweepy.API(auth)
 initDBIndexing(history_coll)
 
-fatal_error = false
+fatal_error = False
 
-while(!fatal_error):
+while(fatal_error == False):
     try:
         _logger.info("streaming...")
         stream = tweepy.Stream(auth, StreamHandler(api, history_coll))
