@@ -1,13 +1,11 @@
-FROM resin/rpi-raspbian
+FROM resin/raspberrypi-python:latest
 MAINTAINER Jiaqi Wu <wooqiaoqi@gmail.com>
 LABEL description="Dockerized foodtruck app"
-RUN apt-get update
-RUN apt-get install -y python python-pip && \
-    pip install tweepy && \
+RUN pip install tweepy && \
     pip install pymongo && \
     pip install requests && \
     pip install git+git://github.com/wujiaqi/pushbullet_client.git
-RUN apt-get install -y mongodb-server && \
+RUN apt-get update && apt-get install -y mongodb-server && \
     mkdir -p /data/db
 RUN apt-get clean && \
     apt-get purge
