@@ -5,6 +5,7 @@ RUN apt-get update
 RUN apt-get install -y python python-pip && \
     pip install tweepy && \
     pip install pymongo && \
+    pip install requests && \
     pip install git+git://github.com/wujiaqi/pushbullet_client.git
 RUN apt-get install -y mongodb-server && \
     mkdir -p /data/db
